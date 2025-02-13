@@ -31,12 +31,12 @@
 
         <service
              android:name="com.example.bg_counter.TimerService"
-             android:exported="true"
-             android:foregroundServiceType="mediaPlayback" />
+             android:exported="false"
+             android:foregroundServiceType="connectedDevice" />
 
         <receiver 
              android:name="com.example.bg_counter.NotificationReceiver"
-             android:exported="true">
+             android:exported="false">
             <intent-filter>
                 <action android:name="com.example.bg_counter.ACTION_TIMER_COMPLETE" />
             </intent-filter>

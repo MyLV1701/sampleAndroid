@@ -1,4 +1,5 @@
 package com.example.bg_counter
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
@@ -39,12 +40,27 @@ class TimerService : Service() {
         }
     }
 
-    private fun sendTimerCompleteBroadcast(counter: Int) {
-        val intent = Intent(ACTION_TIMER_COMPLETE)
-        intent.setPackage(applicationContext.packageName)
-        intent.putExtra(COUNTER_VALUE, counter)
-        sendBroadcast(intent)
-        Log.d(TAG, "sendTimerCompleteBroadcast")
+    private fun sendTimerCompleteBroadcast(counter : Int) {
+        val intent = Intent(ACTION_TIMER_COMPLETE).apply {
+            setPackage(applicationContext.packageName)
+            putExtra(COUNTER_VALUE, counter)
+        }
+        
+        val pendingIntent = 
+        PendingIntent.getBroadcast(
+            applicationContext, // The context in which the PendingIntent should start the broadcast.
+            0, // Request code, used to identify the PendingIntent.
+            intent, // The Intent to be broadcast.
+            PendingIntent.FLAG_UPDATE_CURRENT // Flag to update the existing PendingIntent with the new Intent data.
+            or PendingIntent.FLAG_MUTABLE // Flag to allow the PendingIntent to be mutable.
+        )
+
+        try {
+            pendingIntent.send()
+        } catch (e: PendingIntent.CanceledException) {
+            println("Error sending broadcast:" + e.message)
+            Log.e(TAG, "Error sending broadcast", e)
+        }
     }
 
     override fun onDestroy() {

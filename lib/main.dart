@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(const MyApp());
@@ -32,6 +33,32 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+
+  static const platform = MethodChannel('com.example.bg_counter/timer');
+
+  bool _isServiceRunning = false;
+
+  Future<void> _toggleService() async {
+    try {
+       if (_isServiceRunning)
+       {
+        await platform.invokeMethod('stopService');
+       }
+       else 
+       {
+        await platform.invokeMethod('startService');
+       }
+
+      setState(() {
+          _isServiceRunning = !_isServiceRunning;
+      });
+
+
+    } on PlatformException catch (e) {
+      print("failed to toggle service : '${e.message}' . ");
+    }
+  }
+
 
   // Initialize notifications
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -89,16 +116,16 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text(
-              'Press the button to increment counter.\nCheck notifications!',
+            Text(
+              _isServiceRunning ? 'Service is Running' : 'Service is stoped',
             ),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+        onPressed: _toggleService,
+        tooltip: _isServiceRunning ? 'Stop Service' : 'Start Service',
+        child: Icon(_isServiceRunning? Icons.stop : Icons.play_arrow),
       ),
     );
   }

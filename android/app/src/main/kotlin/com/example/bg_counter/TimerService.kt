@@ -41,9 +41,10 @@ class TimerService : Service() {
 
     private fun sendTimerCompleteBroadcast(counter: Int) {
         val intent = Intent(ACTION_TIMER_COMPLETE)
-        intent.putExtra(COUNTER_VALUE, counter)
+        intent.setPackage(applicationContext.packageName)
+        // intent.putExtra(COUNTER_VALUE, counter)
         sendBroadcast(intent)
-        Log.d(TAG, "Broadcast sent with counter value: $counter")
+        Log.d(TAG, "sendTimerCompleteBroadcast")
     }
 
     override fun onDestroy() {

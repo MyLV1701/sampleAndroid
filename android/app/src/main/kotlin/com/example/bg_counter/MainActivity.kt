@@ -13,7 +13,12 @@ class MainActivity: FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
             if (call.method == "startService" ) 
             {
-                startService(Intent(this, TimerService::class.java))
+                // start Timer service
+                // startService(Intent(this, TimerService::class.java))
+
+                // start BLE scan service               
+                startService(Intent(this, BLEScanService::class.java))
+
                 result.success(null)
             }
             else if (call.method == "stopService" ) 

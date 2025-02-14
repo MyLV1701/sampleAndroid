@@ -59,27 +59,38 @@ class BLEScanService : Service() {
     @RequiresApi(Build.VERSION_CODES.O)
     @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
     private fun startScan() {
-        val scanSettings: ScanSettings = ScanSettings.Builder()
-            .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
-            .setReportDelay(3000)
-            .setScanMode(ScanSettings.SCAN_MODE_BALANCED)
-            .build()
+        try {
+            val scanSettings: ScanSettings = ScanSettings.Builder()
+                .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
+                .setReportDelay(3000)
+                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                .build()
 
-        scanPendingIntent = PendingIntent.getBroadcast(
-            this,
-            1,
-            Intent(this, BLEScanReceiver::class.java),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
-        )
+            scanPendingIntent = PendingIntent.getBroadcast(
+                this,
+                1,
+                Intent(this, BLEScanReceiver::class.java),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
+            )
 
-        val scanFilters = listOf(
-            ScanFilter.Builder()
-            .setDeviceName("A")  // Filter for devices with name "A"
-            .build())
-        val pendingIntent = scanPendingIntent
-        if (pendingIntent != null) {
-            scanner.startScan(scanFilters, scanSettings, pendingIntent)
+            val scanFilters = listOf(
+                ScanFilter.Builder()
+                    .setDeviceName("A")  // Filter for devices with name "A"
+                    .build()
+            )
+            if (::scanner.isInitialized && scanPendingIntent != null) {
+                scanPendingIntent?.let { 
+                    pendingIntent -> scanner.startScan(scanFilters, scanSettings, pendingIntent)
+                }
+                Log.d("BLEScanService", "BLE Scan device started --> scanner.startScan()")
+            } else {
+                Log.e("BLEScanService", "Scanner not initialized or pending intent is null")
+            }
+        } catch (e: Exception) {
+            Log.e("BLEScanService", "Error starting BLE scan: ${e.message}")
         }
+
+        Log.d("BLEScanService", "startScan is invoked --> startScan()")
     }
 
     override fun onDestroy() {
@@ -102,12 +113,12 @@ class BLEScanReceiver : BroadcastReceiver() {
         val results = intent.getScanResults()
         Log.d("BLEScanReceiver", "Devices found: ${results.size}")
 
-        if (results.isNotEmpty()) {
-            devices.update { scanResults ->
-                (scanResults + results).distinctBy { it.device.address }
-            }
-            showNotification(context, "BLE Device Detected", "Found ${results.size} devices")
-        }
+        // if (results.isNotEmpty()) {
+        //     devices.update { scanResults ->
+        //         (scanResults + results).distinctBy { it.device.address }
+        //     }
+        //     showNotification(context, "BLE Device Detected", "Found ${results.size} devices")
+        // }
     }
 
     private fun showNotification(context: Context, title: String, content: String) {

@@ -40,11 +40,18 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import java.util.UUID
 
 class BLEScanService : Service() {
 
     private lateinit var scanner: BluetoothLeScanner
     private var scanPendingIntent: PendingIntent? = null
+
+    companion object {
+        const val BLE_SCAN_RESULT = "com.example.bg_counter.BLE_SCAN_RESULT"
+        const val BLE_SCAN_VALUE = "ble_scan_value"
+        val SERVICE_UUID: UUID = UUID.fromString("0000fd81-0000-1000-8000-00805f9b34fb")
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -62,22 +69,41 @@ class BLEScanService : Service() {
         try {
             val scanSettings: ScanSettings = ScanSettings.Builder()
                 .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
-                .setReportDelay(3000)
+                .setReportDelay(1000)
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
                 .build()
 
-            scanPendingIntent = PendingIntent.getBroadcast(
-                this,
-                1,
-                Intent(this, BLEScanReceiver::class.java),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
+            // scanPendingIntent = PendingIntent.getBroadcast(
+            //     this,
+            //     1,
+            //     Intent("com.example.bg_counter.BLE_SCAN_RESULT"),
+            //     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
+            // )
+
+            val intent = Intent(BLE_SCAN_RESULT).apply {
+                setPackage(applicationContext.packageName)
+            }
+
+            val pendingIntent = 
+                PendingIntent.getBroadcast(
+                    applicationContext, // The context in which the PendingIntent should start the broadcast.
+                    1, // Request code, used to identify the PendingIntent.
+                    intent, // The Intent to be broadcast.
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE // Flag to update the existing PendingIntent with the new Intent data.
             )
 
             val scanFilters = listOf(
                 ScanFilter.Builder()
-                    .setDeviceName("A")  // Filter for devices with name "A"
+                    .setDeviceName("Basic_BLE")  // Filter for devices with name "Basic_BLE"
                     .build()
             )
+
+            // val scanFilters = listOf(
+            //     ScanFilter.Builder()
+            //         .setServiceUuid(ParcelUuid(SERVICE_UUID))
+            //         .build(),
+            // )
+
             if (::scanner.isInitialized && scanPendingIntent != null) {
                 scanPendingIntent?.let { 
                     pendingIntent -> scanner.startScan(scanFilters, scanSettings, pendingIntent)
@@ -106,42 +132,45 @@ class BLEScanReceiver : BroadcastReceiver() {
 
     companion object {
         val devices = MutableStateFlow(emptyList<ScanResult>())
-        const val CHANNEL_ID = "BLE_SCAN_CHANNEL"
+        const val CHANNEL_ID = "ble_scan_channel"
+        private const val BLE_NOTIFICATION_ID = 2
     }
 
     override fun onReceive(context: Context, intent: Intent) {
-        val results = intent.getScanResults()
-        Log.d("BLEScanReceiver", "Devices found: ${results.size}")
 
+        Log.d("BLEScanReceiver", "onReceive is invoked --> onReceive()")
+
+        // Log.d("BLEScanReceiver", "Devices found: ${results.size}")
+        //val results = intent.getScanResults()
         // if (results.isNotEmpty()) {
         //     devices.update { scanResults ->
         //         (scanResults + results).distinctBy { it.device.address }
         //     }
         //     showNotification(context, "BLE Device Detected", "Found ${results.size} devices")
         // }
+
+        showNotification(context)
     }
 
-    private fun showNotification(context: Context, title: String, content: String) {
+    private fun showNotification(context: Context) {
         val notificationManager = NotificationManagerCompat.from(context)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
+             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "BLE Scan Notifications",
+                "ble_scan Channel",
                 NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = "Notifications for BLE scan results"
-            }
+            )
             notificationManager.createNotificationChannel(channel)
         }
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle(title)
-            .setContentText(content)
+            .setContentTitle("ble_scan Update")
+            .setContentText("ble_scan context")
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
 
-        notificationManager.notify(1, notification)
+        notificationManager.notify(BLE_NOTIFICATION_ID, notification)
     }
 
     private fun Intent.getScanResults(): List<ScanResult> =

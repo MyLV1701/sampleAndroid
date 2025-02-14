@@ -18,6 +18,7 @@ class TimerService : Service() {
 
     companion object {
         const val ACTION_TIMER_COMPLETE = "com.example.bg_counter.ACTION_TIMER_COMPLETE"
+        const val A_BLE_SCAN_RESULT = "com.example.bg_counter.BLE_SCAN_RESULT"
         const val COUNTER_VALUE = "counter_value"
     }
 
@@ -41,9 +42,8 @@ class TimerService : Service() {
     }
 
     private fun sendTimerCompleteBroadcast(counter : Int) {
-        val intent = Intent(ACTION_TIMER_COMPLETE).apply {
+        val intent = Intent(A_BLE_SCAN_RESULT).apply {
             setPackage(applicationContext.packageName)
-            putExtra(COUNTER_VALUE, counter)
         }
         
         val pendingIntent = 

@@ -102,7 +102,9 @@ class BLEScanService : Service() {
                 .build()
 
             val scanFilters = listOf(
-                ScanFilter.Builder().build()
+                ScanFilter.Builder()
+                    .setDeviceName("QCY Crossky C30-APP")
+                    .build()
             )
 
             if (::scanner.isInitialized) {

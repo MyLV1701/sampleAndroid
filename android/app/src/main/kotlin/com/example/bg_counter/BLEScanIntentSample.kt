@@ -22,10 +22,10 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanFilter
-import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -41,10 +41,13 @@ import androidx.core.app.NotificationManagerCompat
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import java.util.UUID
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanResult as BluetoothScanResult
 
 class BLEScanService : Service() {
 
     private lateinit var scanner: BluetoothLeScanner
+    private lateinit var bluetoothAdapter: BluetoothAdapter
     private var scanPendingIntent: PendingIntent? = null
 
     companion object {
@@ -56,8 +59,16 @@ class BLEScanService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        scanner = bluetoothManager.adapter.bluetoothLeScanner
+        // val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+        scanner = bluetoothAdapter.bluetoothLeScanner
+
+        if (!bluetoothAdapter.isEnabled) {
+            Log.e("BLEScanService", "Bluetooth is disabled")
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
         startScan()
         return START_STICKY
     }
@@ -65,64 +76,50 @@ class BLEScanService : Service() {
     @SuppressLint("InlinedApi")
     @RequiresApi(Build.VERSION_CODES.O)
     @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
+    private val scanCallback = object : ScanCallback() {
+        override fun onScanResult(callbackType: Int, result: BluetoothScanResult) {
+            Log.d("BLEScanService", "Device found: ${result.device.name} - (${result.device.address})")
+            // val intent = Intent(BLE_SCAN_RESULT)
+            // intent.putExtra(BLE_SCAN_VALUE, result)
+            // sendBroadcast(intent)
+        }
+
+        override fun onBatchScanResults(results: List<BluetoothScanResult>) {
+            for (result in results) {
+                Log.d("BLEScanService", "Batch result device: ${result.device.address}")
+            }
+        }
+
+        override fun onScanFailed(errorCode: Int) {
+            Log.e("BLEScanService", "Scan failed with error code: $errorCode")
+        }
+    }
+
     private fun startScan() {
         try {
-            val scanSettings: ScanSettings = ScanSettings.Builder()
-                .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
-                .setReportDelay(1000)
-                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+            val scanSettings = ScanSettings.Builder()
+                .setScanMode(ScanSettings.SCAN_MODE_BALANCED)
                 .build()
 
-            // scanPendingIntent = PendingIntent.getBroadcast(
-            //     this,
-            //     1,
-            //     Intent("com.example.bg_counter.BLE_SCAN_RESULT"),
-            //     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
-            // )
-
-            val intent = Intent(BLE_SCAN_RESULT).apply {
-                setPackage(applicationContext.packageName)
-            }
-
-            val pendingIntent = 
-                PendingIntent.getBroadcast(
-                    applicationContext, // The context in which the PendingIntent should start the broadcast.
-                    1, // Request code, used to identify the PendingIntent.
-                    intent, // The Intent to be broadcast.
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE // Flag to update the existing PendingIntent with the new Intent data.
-            )
-
             val scanFilters = listOf(
-                ScanFilter.Builder()
-                    .setDeviceName("Basic_BLE")  // Filter for devices with name "Basic_BLE"
-                    .build()
+                ScanFilter.Builder().build()
             )
 
-            // val scanFilters = listOf(
-            //     ScanFilter.Builder()
-            //         .setServiceUuid(ParcelUuid(SERVICE_UUID))
-            //         .build(),
-            // )
-
-            if (::scanner.isInitialized && scanPendingIntent != null) {
-                scanPendingIntent?.let { 
-                    pendingIntent -> scanner.startScan(scanFilters, scanSettings, pendingIntent)
-                }
-                Log.d("BLEScanService", "BLE Scan device started --> scanner.startScan()")
+            if (::scanner.isInitialized) {
+                scanner.startScan(scanFilters, scanSettings, scanCallback)
+                Log.d("BLEScanService", "BLE Scan started with callback")
             } else {
-                Log.e("BLEScanService", "Scanner not initialized or pending intent is null")
+                Log.e("BLEScanService", "Scanner not initialized")
             }
         } catch (e: Exception) {
             Log.e("BLEScanService", "Error starting BLE scan: ${e.message}")
         }
-
-        Log.d("BLEScanService", "startScan is invoked --> startScan()")
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        scanPendingIntent?.let { pendingIntent ->
-            scanner.stopScan(pendingIntent)
+        if (::scanner.isInitialized) {
+            scanner.stopScan(scanCallback)
         }
     }
 }
@@ -131,7 +128,7 @@ class BLEScanService : Service() {
 class BLEScanReceiver : BroadcastReceiver() {
 
     companion object {
-        val devices = MutableStateFlow(emptyList<ScanResult>())
+        val devices = MutableStateFlow(emptyList<BluetoothScanResult>())
         const val CHANNEL_ID = "ble_scan_channel"
         private const val BLE_NOTIFICATION_ID = 2
     }
@@ -173,11 +170,11 @@ class BLEScanReceiver : BroadcastReceiver() {
         notificationManager.notify(BLE_NOTIFICATION_ID, notification)
     }
 
-    private fun Intent.getScanResults(): List<ScanResult> =
+    private fun Intent.getScanResults(): List<BluetoothScanResult> =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             getParcelableArrayListExtra(
                 BluetoothLeScanner.EXTRA_LIST_SCAN_RESULT,
-                ScanResult::class.java,
+                BluetoothScanResult::class.java,
             )
         } else {
             @Suppress("DEPRECATION")

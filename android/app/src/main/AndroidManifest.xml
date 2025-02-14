@@ -1,18 +1,46 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.bg_counter">
 
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
-    <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Bluetooth Low Energy（BLE）をサポートするデバイスであることを指定 -->
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
 
-    <uses-permission android:name="android.permission.BLUETOOTH"/>
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"/>
+    <!-- Android 12以降の新しいBluetoothパーミッション -->
+    <!-- スキャンに必要な権限。位置情報として使用しない場合は"neverForLocation"フラグを設定 -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
+    <!-- デバイスに接続するための権限 -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+
+    <!-- Android 11以前のデバイス向けのBluetooth関連の権限 -->
+    <!-- Bluetoothの基本的な操作を行うための権限 -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <!-- Bluetooth管理操作のための権限 -->
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <!-- 精密な位置情報を使用するための権限（BLEスキャンには位置情報が必要） -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30"/>
+
+    <!-- Android 9以前のデバイス向けの位置情報権限 -->
+    <!-- 粗い位置情報を使用するための権限（BLEスキャン用） -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" android:maxSdkVersion="28" />
+
+    <!-- フォアグラウンドサービスを使用するための権限 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
+    <!-- データ同期のためのフォアグラウンドサービス権限 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+
+    <!-- リモートメッセージングのためのフォアグラウンドサービス権限 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING" />
+
+    <!-- 上記のフォアグラウンド サービス リストに基づいてこれを選択します -->
+    <uses-permission  android:name = "android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+
+    <!-- We can leave mostly empty since everything we need is already in ../main/AndroidManifest.xml-->
+    <!-- However, Internet is needed by Flutter for debugging, hot reload, wirless upload, etc -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- アプリがデバイスの起動完了後にブロードキャストを受信することを許可します。この権限を持つアプリは、デバイスが再起動されたときに BOOT_COMPLETED ブロードキャストを受信し、特定の初期化処理を実行することができます。-->
+    <uses-permission android:name="android.permission.VIBRATE"/>
+    <!--    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>-->
 
     <application
         android:label="bg_counter"

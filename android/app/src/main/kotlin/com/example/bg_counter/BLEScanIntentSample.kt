@@ -43,12 +43,17 @@ import kotlinx.coroutines.flow.update
 import java.util.UUID
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult as BluetoothScanResult
+import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCallback
+import android.bluetooth.BluetoothDevice
 
 class BLEScanService : Service() {
 
     private lateinit var scanner: BluetoothLeScanner
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private var scanPendingIntent: PendingIntent? = null
+    private var bluetoothGatt: BluetoothGatt? = null
 
     companion object {
         const val BLE_SCAN_RESULT = "com.example.bg_counter.BLE_SCAN_RESULT"
@@ -73,6 +78,27 @@ class BLEScanService : Service() {
         return START_STICKY
     }
 
+    private val gattCallback = object : BluetoothGattCallback() {
+        override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+            when (newState) {
+                BluetoothProfile.STATE_CONNECTED -> {
+                    Log.d("BLEScanService", "Connected to ${gatt.device.address}")
+                    gatt.discoverServices()  // Discover services after successful connection
+                }
+                BluetoothProfile.STATE_DISCONNECTED -> {
+                    Log.d("BLEScanService", "Disconnected from ${gatt.device.address}")
+                    bluetoothGatt?.close()
+                    bluetoothGatt = null
+                }
+            }
+        }
+    }
+
+    private fun connectToDevice(device: BluetoothDevice) {
+        bluetoothGatt = device.connectGatt(this, false, gattCallback)
+        Log.d("BLEScanService", "Connecting to ${device.address}...")
+    }
+
     @SuppressLint("InlinedApi")
     @RequiresApi(Build.VERSION_CODES.O)
     @RequiresPermission(Manifest.permission.BLUETOOTH_SCAN)
@@ -82,6 +108,13 @@ class BLEScanService : Service() {
             // val intent = Intent(BLE_SCAN_RESULT)
             // intent.putExtra(BLE_SCAN_VALUE, result)
             // sendBroadcast(intent)
+
+            val device: BluetoothDevice = result.device
+            if (device.name != null) {  // Filter out unnamed devices
+                Log.d("BLE", "Found device: ${device.name} - ${device.address}")
+
+                connectToDevice(device)  // Automatically request a connection to the device
+            }
         }
 
         override fun onBatchScanResults(results: List<BluetoothScanResult>) {

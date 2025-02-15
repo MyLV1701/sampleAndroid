@@ -92,6 +92,15 @@ class BLEScanService : Service() {
                 }
             }
         }
+
+        override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                Log.d("BLEScanService", "Services discovered")
+                for (service in gatt.services) {
+                    Log.d("BLEScanService", "Service UUID: ${service.uuid}")
+                }
+            }
+        }
     }
 
     private fun connectToDevice(device: BluetoothDevice) {

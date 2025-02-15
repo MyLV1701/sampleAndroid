@@ -120,7 +120,7 @@ class BLEScanService : Service() {
 
             val device: BluetoothDevice = result.device
             if (device.name != null) {  // Filter out unnamed devices
-                Log.d("BLE", "Found device: ${device.name} - ${device.address}")
+                Log.d("BLEScanService", "Found device: ${device.name} - ${device.address}")
 
                 connectToDevice(device)  // Automatically request a connection to the device
             }
@@ -145,7 +145,7 @@ class BLEScanService : Service() {
 
             val scanFilters = listOf(
                 ScanFilter.Builder()
-                    .setDeviceName("QCY Crossky C30-APP")
+                    .setDeviceName("Basic_BLE")
                     .build()
             )
 

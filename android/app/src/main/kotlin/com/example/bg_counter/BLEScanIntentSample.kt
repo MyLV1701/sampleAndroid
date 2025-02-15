@@ -83,12 +83,19 @@ class BLEScanService : Service() {
             when (newState) {
                 BluetoothProfile.STATE_CONNECTED -> {
                     Log.d("BLEScanService", "Connected to ${gatt.device.address}")
-                    gatt.discoverServices()  // Discover services after successful connection
+                    // Stop scanning after successful connection
+                    if (::scanner.isInitialized) {
+                        scanner.stopScan(scanCallback)
+                        Log.d("BLEScanService", "Scanning stopped after connection")
+                    }
+                    gatt.discoverServices()
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
                     Log.d("BLEScanService", "Disconnected from ${gatt.device.address}")
                     bluetoothGatt?.close()
                     bluetoothGatt = null
+                    // Optionally restart scanning when disconnected
+                    startScan()
                 }
             }
         }

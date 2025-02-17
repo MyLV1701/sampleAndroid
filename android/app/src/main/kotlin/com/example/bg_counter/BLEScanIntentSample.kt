@@ -58,8 +58,7 @@ class BLEScanService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-
-
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         scanner = bluetoothManager.adapter.bluetoothLeScanner
         startScan()

@@ -58,7 +58,8 @@ class BLEScanService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+
+
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         scanner = bluetoothManager.adapter.bluetoothLeScanner
         startScan()
@@ -85,7 +86,7 @@ class BLEScanService : Service() {
 
             val scanFilters = listOf(
                 ScanFilter.Builder()
-                    .setDeviceName("QCY Crossky C30-APP")  // Filter for devices with name "A"
+                    .setDeviceName("Basic_BLE")  // Filter for devices with name "A"
                     .build()
             )
             if (::scanner.isInitialized && scanPendingIntent != null) {
@@ -123,17 +124,25 @@ class BLEScanReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
 
         Log.d("BLEScanReceiver", "onReceive is invoked --> onReceive()")
+        
+        val results = intent.getScanResults()
+        results.forEach { result ->
+            val device = result.device
+            // Try multiple ways to get the device name
+            val deviceName = result.scanRecord?.deviceName  // From scan record
+                ?: device.name                             // Cached name
+                ?: "Unknown Device"                        // Fallback
+            
+            Log.d("BLEScanReceiver", """
+                Device Found:
+                Address: ${device.address}
+                Name: $deviceName
+                RSSI: ${result.rssi}
+                Advertisement Data: ${result.scanRecord?.bytes?.contentToString()}
+            """.trimIndent())
+        }
 
-        // Log.d("BLEScanReceiver", "Devices found: ${results.size}")
-        //val results = intent.getScanResults()
-        // if (results.isNotEmpty()) {
-        //     devices.update { scanResults ->
-        //         (scanResults + results).distinctBy { it.device.address }
-        //     }
-        //     showNotification(context, "BLE Device Detected", "Found ${results.size} devices")
-        // }
-
-        showNotification(context)
+        //showNotification(context)
     }
 
     private fun showNotification(context: Context) {

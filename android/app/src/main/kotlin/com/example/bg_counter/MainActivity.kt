@@ -23,7 +23,8 @@ class MainActivity: FlutterActivity() {
             }
             else if (call.method == "stopService" ) 
             {
-                stopService(Intent(this, TimerService::class.java))
+                // stopService(Intent(this, TimerService::class.java))
+                stopService(Intent(this, BLEScanService::class.java))
                 result.success(null)
             }
             else

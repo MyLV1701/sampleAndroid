@@ -153,11 +153,11 @@ class BLEScanReceiver : BroadcastReceiver() {
 
             Log.d("BLEScanReceiver", msg.trim())
             
-            // Start BLEConnectionService to handle the connection
-            val scanServiceIntent = Intent(context, BLEScanService::class.java).apply {
-                putExtra(BLEScanService.STOP_SERVICE, device.address)
-            }
-            context.startService(scanServiceIntent)
+            // // Start BLEConnectionService to handle the connection
+            // val scanServiceIntent = Intent(context, BLEScanService::class.java).apply {
+            //     putExtra(BLEScanService.STOP_SERVICE, device.address)
+            // }
+            // context.startService(scanServiceIntent)
             
             val serviceIntent = Intent(context, BLEConnectionService::class.java).apply {
                 putExtra(BLEConnectionService.DEVICE_ADDRESS, device.address)

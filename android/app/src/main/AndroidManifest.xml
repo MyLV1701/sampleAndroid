@@ -10,6 +10,8 @@
     <!-- デバイスに接続するための権限 -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
     <!-- Android 11以前のデバイス向けのBluetooth関連の権限 -->
     <!-- Bluetoothの基本的な操作を行うための権限 -->
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
@@ -75,6 +77,11 @@
              android:name="com.example.bg_counter.BLEScanService"
              android:exported="false"
              android:foregroundServiceType="connectedDevice" />
+
+        <service
+            android:name=".BLEConnectionService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice" />
 
         <receiver 
              android:name="com.example.bg_counter.NotificationReceiver"

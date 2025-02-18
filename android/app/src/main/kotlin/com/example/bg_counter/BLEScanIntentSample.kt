@@ -43,6 +43,10 @@ import kotlinx.coroutines.flow.update
 import java.util.UUID
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult as BluetoothScanResult
+import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCallback
+import android.bluetooth.BluetoothDevice
 
 class BLEScanService : Service() {
 
@@ -51,9 +55,8 @@ class BLEScanService : Service() {
     private var scanPendingIntent: PendingIntent? = null
 
     companion object {
-        const val BLE_SCAN_RESULT = "com.example.bg_counter.BLE_SCAN_RESULT"
+        const val BLE_SCAN_RESULT = "com.lib.flutter_blue_plus_example.BLE_SCAN_RESULT"
         const val BLE_SCAN_VALUE = "ble_scan_value"
-        val SERVICE_UUID: UUID = UUID.fromString("0000fd81-0000-1000-8000-00805f9b34fb")
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -126,25 +129,30 @@ class BLEScanReceiver : BroadcastReceiver() {
         
         val results = intent.getScanResults()
         results.forEach { result ->
-            val device = result.device
-            // Try multiple ways to get the device name
-            val deviceName = result.scanRecord?.deviceName  // From scan record
-                ?: device.name                             // Cached name
-                ?: "Unknown Device"                        // Fallback
-            
-            Log.d("BLEScanReceiver", """
-                Device Found:
-                Address: ${device.address}
-                Name: $deviceName
-                RSSI: ${result.rssi}
-                Advertisement Data: ${result.scanRecord?.bytes?.contentToString()}
-            """.trimIndent())
-        }
+        val device: BluetoothDevice = result.device
+        val deviceName = result.scanRecord?.deviceName  // From scan record
+            ?: device.name                             // Cached name
+            ?: "Unknown Device"                        // Fallback
 
-        //showNotification(context)
+            val msg = StringBuilder().apply {
+                append("Address: ${device.address}\n")
+                append("Name: $deviceName\n")
+                append("RSSI: ${result.rssi}\n")
+                append("Advertisement Data: ${result.scanRecord?.bytes?.contentToString()}\n")
+            }.toString()
+
+            Log.d("BLEScanReceiver", msg.trim())
+            
+            // Start BLEConnectionService to handle the connection
+            val serviceIntent = Intent(context, BLEConnectionService::class.java).apply {
+                putExtra(BLEConnectionService.DEVICE_ADDRESS, device.address)
+            }
+            context.startForegroundService(serviceIntent)
+        }
+        
     }
 
-    private fun showNotification(context: Context) {
+    private fun showNotification(context: Context, _msg: String) {
         val notificationManager = NotificationManagerCompat.from(context)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
              val channel = NotificationChannel(
@@ -157,7 +165,7 @@ class BLEScanReceiver : BroadcastReceiver() {
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setContentTitle("ble_scan Update")
-            .setContentText("ble_scan context")
+            .setContentText(_msg)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()

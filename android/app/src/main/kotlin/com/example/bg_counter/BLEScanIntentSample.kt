@@ -131,6 +131,7 @@ class BLEScanReceiver : BroadcastReceiver() {
         val devices = MutableStateFlow(emptyList<BluetoothScanResult>())
         const val CHANNEL_ID = "ble_scan_channel"
         private const val BLE_NOTIFICATION_ID = 2
+        var counter = 0
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -163,7 +164,13 @@ class BLEScanReceiver : BroadcastReceiver() {
                 putExtra(BLEConnectionService.DEVICE_ADDRESS, device.address)
             }
             // context.startForegroundService(serviceIntent)
-            context.startService(serviceIntent)
+            //context.startService(serviceIntent)
+            if (counter < 1)
+            {
+                context.getApplicationContext().startForegroundService(serviceIntent)
+                counter++
+                Log.d("BLEScanReceiver", "context.getApplicationContext().startService(serviceIntent)")
+            }
         }
         
     }

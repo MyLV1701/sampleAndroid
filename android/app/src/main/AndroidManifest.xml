@@ -10,22 +10,24 @@
     <!-- デバイスに接続するための権限 -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/> -->
 
     <!-- Android 11以前のデバイス向けのBluetooth関連の権限 -->
     <!-- Bluetoothの基本的な操作を行うための権限 -->
-    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="36" />
     <!-- Bluetooth管理操作のための権限 -->
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="36" />
+    
     <!-- 精密な位置情報を使用するための権限（BLEスキャンには位置情報が必要） -->
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="36"/>
 
     <!-- Android 9以前のデバイス向けの位置情報権限 -->
     <!-- 粗い位置情報を使用するための権限（BLEスキャン用） -->
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" android:maxSdkVersion="36" />
 
     <!-- フォアグラウンドサービスを使用するための権限 -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
 
     <!-- データ同期のためのフォアグラウンドサービス権限 -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />

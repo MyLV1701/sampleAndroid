@@ -18,6 +18,10 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import android.bluetooth.BluetoothAdapter
+import android.os.Handler
+import android.os.Looper
+
+
 
 class BLEConnectionService : Service() {
 
@@ -29,6 +33,22 @@ class BLEConnectionService : Service() {
         const val CHANNEL_ID = "ble_connection_channel"
         private const val BLE_NOTIFICATION_ID = 1
         const val DEVICE_ADDRESS = "device_address"
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        startForegroundService()
+    }
+
+
+    fun BluetoothGatt.refresh(): Boolean {
+        return try {
+            val method = this::class.java.getMethod("refresh")
+            method.invoke(this) as Boolean
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -44,39 +64,6 @@ class BLEConnectionService : Service() {
         }
         return START_STICKY
     }
-
-    // private val gattCallback = object : BluetoothGattCallback() {
-    //     override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
-    //         when (newState) {
-    //             BluetoothProfile.STATE_CONNECTED -> {
-    //                 Log.d("BLEConnectionService", "Connected to ${gatt.device.address}")
-    //                 gatt.discoverServices()
-    //             }
-    //             BluetoothProfile.STATE_DISCONNECTED -> {
-    //                 Log.d("BLEConnectionService", "Disconnected from ${gatt.device.address}")
-    //                 bluetoothGatt?.close()
-    //                 bluetoothGatt = null
-    //                 stopSelf()
-    //             }
-    //         }
-    //     }
-
-    //     override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
-    //         if (status == BluetoothGatt.GATT_SUCCESS) {
-    //             Log.d("BLEConnectionService", "Services discovered")
-    //             for (service in gatt.services) {
-    //                 Log.d("BLEConnectionService", "Service UUID: ${service.uuid}")
-    //             }
-    //         }
-    //     }
-    // }
-
-    // private fun connectToDevice(device: BluetoothDevice) {
-    //     bluetoothGatt = device.connectGatt(this, false, gattCallback)
-    //     Log.d("BLEConnectionService", "Connecting to ${device.address}...")
-    //     //startForegroundService()
-    // }
-
 
     private val gattCallback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
@@ -117,21 +104,24 @@ class BLEConnectionService : Service() {
     }
 
     private fun connectToDevice(device: BluetoothDevice) {
-    if (connectionAttempts < MAX_ATTEMPTS) {
+
+        val scanService = Intent(this, BLEScanService::class.java)
+        stopService(scanService)
+        
         bluetoothGatt?.close()
-        bluetoothGatt = device.connectGatt(
-            this,
-            false,  // false = connect immediately
-            gattCallback,
-            BluetoothDevice.TRANSPORT_LE  // Explicitly specify LE transport
-        )
+        bluetoothGatt = null
+
         connectionAttempts++
-        Log.d("BLEConnectionService", "Attempt $connectionAttempts: Connecting to ${device.address}...")
-    } else {
-        Log.e("BLEConnectionService", "Failed to connect after $MAX_ATTEMPTS attempts")
-        stopSelf()
+
+        Handler(Looper.getMainLooper()).postDelayed({
+            bluetoothGatt = device.connectGatt(this, false, gattCallback, BluetoothDevice.TRANSPORT_LE)
+            bluetoothGatt?.refresh()
+        }, 2000)  // Add a delay before reconnecting
+
+        // bluetoothGatt = device.connectGatt(this, false, gattCallback)
+
+        Log.d("BLEConnectionService", "Connecting to ${device.address}...")
     }
-}
 
     private fun startForegroundService() {
         val notificationManager = NotificationManagerCompat.from(this)
@@ -152,6 +142,8 @@ class BLEConnectionService : Service() {
             .build()
 
         startForeground(BLE_NOTIFICATION_ID, notification)
+
+        Log.d("BLEConnectionService", "startForeground(BLE_NOTIFICATION_ID, notification)")
     }
 
     override fun onDestroy() {

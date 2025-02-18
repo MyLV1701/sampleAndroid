@@ -53,15 +53,25 @@ class BLEScanService : Service() {
     private lateinit var scanner: BluetoothLeScanner
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private var scanPendingIntent: PendingIntent? = null
+    
 
     companion object {
         const val BLE_SCAN_RESULT = "com.lib.flutter_blue_plus_example.BLE_SCAN_RESULT"
         const val BLE_SCAN_VALUE = "ble_scan_value"
+        const val STOP_SERVICE = "device_address"
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+
+
+        val command = intent?.getStringExtra(STOP_SERVICE)
+        if (command != null) {
+            Log.d("BLEScanService", "BLE Scan  stopSelf() due to found device")
+            stopSelf()
+        }
+
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
         scanner = bluetoothManager.adapter.bluetoothLeScanner
         startScan()
@@ -144,6 +154,11 @@ class BLEScanReceiver : BroadcastReceiver() {
             Log.d("BLEScanReceiver", msg.trim())
             
             // Start BLEConnectionService to handle the connection
+            val scanServiceIntent = Intent(context, BLEScanService::class.java).apply {
+                putExtra(BLEScanService.STOP_SERVICE, device.address)
+            }
+            context.startService(scanServiceIntent)
+            
             val serviceIntent = Intent(context, BLEConnectionService::class.java).apply {
                 putExtra(BLEConnectionService.DEVICE_ADDRESS, device.address)
             }

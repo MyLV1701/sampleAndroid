@@ -22,6 +22,8 @@ import android.bluetooth.BluetoothAdapter
 class BLEConnectionService : Service() {
 
     private var bluetoothGatt: BluetoothGatt? = null
+    private var connectionAttempts = 0
+    private val MAX_ATTEMPTS = 3
 
     companion object {
         const val CHANNEL_ID = "ble_connection_channel"
@@ -35,7 +37,7 @@ class BLEConnectionService : Service() {
         val deviceAddress = intent?.getStringExtra(DEVICE_ADDRESS)
         if (deviceAddress != null) {
             val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-            val device = bluetoothAdapter.getRemoteDevice(deviceAddress)
+            val device : BluetoothDevice = bluetoothAdapter.getRemoteDevice(deviceAddress)
             connectToDevice(device)
         } else {
             stopSelf()
@@ -43,37 +45,93 @@ class BLEConnectionService : Service() {
         return START_STICKY
     }
 
+    // private val gattCallback = object : BluetoothGattCallback() {
+    //     override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+    //         when (newState) {
+    //             BluetoothProfile.STATE_CONNECTED -> {
+    //                 Log.d("BLEConnectionService", "Connected to ${gatt.device.address}")
+    //                 gatt.discoverServices()
+    //             }
+    //             BluetoothProfile.STATE_DISCONNECTED -> {
+    //                 Log.d("BLEConnectionService", "Disconnected from ${gatt.device.address}")
+    //                 bluetoothGatt?.close()
+    //                 bluetoothGatt = null
+    //                 stopSelf()
+    //             }
+    //         }
+    //     }
+
+    //     override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
+    //         if (status == BluetoothGatt.GATT_SUCCESS) {
+    //             Log.d("BLEConnectionService", "Services discovered")
+    //             for (service in gatt.services) {
+    //                 Log.d("BLEConnectionService", "Service UUID: ${service.uuid}")
+    //             }
+    //         }
+    //     }
+    // }
+
+    // private fun connectToDevice(device: BluetoothDevice) {
+    //     bluetoothGatt = device.connectGatt(this, false, gattCallback)
+    //     Log.d("BLEConnectionService", "Connecting to ${device.address}...")
+    //     //startForegroundService()
+    // }
+
+
     private val gattCallback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
-            when (newState) {
-                BluetoothProfile.STATE_CONNECTED -> {
-                    Log.d("BLEConnectionService", "Connected to ${gatt.device.address}")
-                    gatt.discoverServices()
+            when (status) {
+                BluetoothGatt.GATT_SUCCESS -> {
+                    when (newState) {
+                        BluetoothProfile.STATE_CONNECTED -> {
+                            Log.d("BLEConnectionService", "Successfully connected to ${gatt.device.address}")
+                            connectionAttempts = 0  // Reset counter on successful connection
+                            gatt.discoverServices()
+                        }
+                        BluetoothProfile.STATE_DISCONNECTED -> {
+                            Log.d("BLEConnectionService", "Disconnected from ${gatt.device.address}")
+                            bluetoothGatt?.close()
+                            bluetoothGatt = null
+                            // Retry connection if not max attempts
+                            if (connectionAttempts < MAX_ATTEMPTS) {
+                                connectToDevice(gatt.device)
+                            } else {
+                                stopSelf()
+                            }
+                        }
+                    }
                 }
-                BluetoothProfile.STATE_DISCONNECTED -> {
-                    Log.d("BLEConnectionService", "Disconnected from ${gatt.device.address}")
+                else -> {
+                    Log.e("BLEConnectionService", "Connection failed with status: $status")
                     bluetoothGatt?.close()
                     bluetoothGatt = null
-                    stopSelf()
-                }
-            }
-        }
-
-        override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
-            if (status == BluetoothGatt.GATT_SUCCESS) {
-                Log.d("BLEConnectionService", "Services discovered")
-                for (service in gatt.services) {
-                    Log.d("BLEConnectionService", "Service UUID: ${service.uuid}")
+                    // Retry on error
+                    if (connectionAttempts < MAX_ATTEMPTS) {
+                        connectToDevice(gatt.device)
+                    } else {
+                        stopSelf()
+                    }
                 }
             }
         }
     }
 
     private fun connectToDevice(device: BluetoothDevice) {
-        bluetoothGatt = device.connectGatt(this, false, gattCallback)
-        Log.d("BLEConnectionService", "Connecting to ${device.address}...")
-        //startForegroundService()
+    if (connectionAttempts < MAX_ATTEMPTS) {
+        bluetoothGatt?.close()
+        bluetoothGatt = device.connectGatt(
+            this,
+            false,  // false = connect immediately
+            gattCallback,
+            BluetoothDevice.TRANSPORT_LE  // Explicitly specify LE transport
+        )
+        connectionAttempts++
+        Log.d("BLEConnectionService", "Attempt $connectionAttempts: Connecting to ${device.address}...")
+    } else {
+        Log.e("BLEConnectionService", "Failed to connect after $MAX_ATTEMPTS attempts")
+        stopSelf()
     }
+}
 
     private fun startForegroundService() {
         val notificationManager = NotificationManagerCompat.from(this)

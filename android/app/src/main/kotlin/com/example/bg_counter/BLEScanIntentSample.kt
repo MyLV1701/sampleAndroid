@@ -129,7 +129,11 @@ class BLEScanService : Service() {
             if (device.name != null) {  // Filter out unnamed devices
                 Log.d("BLEScanService", "Found device: ${device.name} - ${device.address}")
 
-                connectToDevice(device)  // Automatically request a connection to the device
+                // connectToDevice(device)  // Automatically request a connection to the device
+                val connectIntent = Intent(this@BLEScanService, BLEConnectionService::class.java).apply {
+                    putExtra(BLEConnectionService.DEVICE_ADDRESS, device.address)
+                }
+                startService(connectIntent)
             }
         }
 

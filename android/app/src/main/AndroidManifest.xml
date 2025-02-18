@@ -67,6 +67,11 @@
         </activity>
 
         <service
+             android:name="com.example.bg_counter.BLEConnectionService"
+             android:exported="false"
+             android:foregroundServiceType="connectedDevice" />
+
+        <service
              android:name="com.example.bg_counter.TimerService"
              android:exported="false"
              android:foregroundServiceType="connectedDevice" />

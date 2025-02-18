@@ -72,7 +72,7 @@ class BLEConnectionService : Service() {
     private fun connectToDevice(device: BluetoothDevice) {
         bluetoothGatt = device.connectGatt(this, false, gattCallback)
         Log.d("BLEConnectionService", "Connecting to ${device.address}...")
-        startForegroundService()
+        //startForegroundService()
     }
 
     private fun startForegroundService() {

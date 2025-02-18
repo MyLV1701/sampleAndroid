@@ -147,7 +147,8 @@ class BLEScanReceiver : BroadcastReceiver() {
             val serviceIntent = Intent(context, BLEConnectionService::class.java).apply {
                 putExtra(BLEConnectionService.DEVICE_ADDRESS, device.address)
             }
-            context.startForegroundService(serviceIntent)
+            // context.startForegroundService(serviceIntent)
+            context.startService(serviceIntent)
         }
         
     }

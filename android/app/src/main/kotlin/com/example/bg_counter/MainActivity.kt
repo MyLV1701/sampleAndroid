@@ -16,9 +16,8 @@ class MainActivity: FlutterActivity() {
                 // start Timer service
                 //startService(Intent(this, TimerService::class.java))
 
-                // start BLE scan service               
-                startService(Intent(this, BLEScanService::class.java))
-
+                // start BLE scan service          
+                startForegroundService(Intent(this, BLEScanService::class.java))
                 result.success(null)
             }
             else if (call.method == "stopService" ) 

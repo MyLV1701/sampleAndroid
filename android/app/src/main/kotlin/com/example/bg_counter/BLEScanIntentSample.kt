@@ -53,12 +53,20 @@ class BLEScanService : Service() {
     private lateinit var scanner: BluetoothLeScanner
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private var scanPendingIntent: PendingIntent? = null
-    
 
     companion object {
         const val BLE_SCAN_RESULT = "com.lib.flutter_blue_plus_example.BLE_SCAN_RESULT"
         const val BLE_SCAN_VALUE = "ble_scan_value"
         const val STOP_SERVICE = "device_address"
+
+        const val CHANNEL_ID = "ble_connection_channel"
+        private const val BLE_NOTIFICATION_ID = 1
+        const val DEVICE_ADDRESS = "device_address"
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        startForegroundService()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -114,6 +122,29 @@ class BLEScanService : Service() {
         }
 
         Log.d("BLEScanService", "startScan is invoked --> startScan()")
+    }
+
+    private fun startForegroundService() {
+        val notificationManager = NotificationManagerCompat.from(this)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "BLE SCAN Channel",
+                NotificationManager.IMPORTANCE_DEFAULT
+            )
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("BLE SCAN Service")
+            .setContentText("Handling BLE SCAN")
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
+
+        startForeground(BLE_NOTIFICATION_ID, notification)
+        
+        Log.d("BLEScanService", "startForeground(BLE_NOTIFICATION_ID, notification)")
     }
 
     override fun onDestroy() {

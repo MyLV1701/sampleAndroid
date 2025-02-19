@@ -20,7 +20,8 @@ import androidx.core.app.NotificationManagerCompat
 import android.bluetooth.BluetoothAdapter
 import android.os.Handler
 import android.os.Looper
-
+import android.bluetooth.le.ScanResult as BluetoothScanResult
+import android.bluetooth.le.BluetoothLeScanner
 
 
 class BLEConnectionService : Service() {
@@ -35,12 +36,6 @@ class BLEConnectionService : Service() {
         const val DEVICE_ADDRESS = "device_address"
     }
 
-    override fun onCreate() {
-        super.onCreate()
-        startForegroundService()
-    }
-
-
     fun BluetoothGatt.refresh(): Boolean {
         return try {
             val method = this::class.java.getMethod("refresh")
@@ -54,14 +49,6 @@ class BLEConnectionService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // val deviceAddress = intent?.getStringExtra(DEVICE_ADDRESS)
-        // if (deviceAddress != null) {
-        //     val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-        //     val device : BluetoothDevice = bluetoothAdapter.getRemoteDevice(deviceAddress)
-        //     connectToDevice(device)
-        // } else {
-        //     stopSelf()
-        // }
         Log.d("BLEConnectionService", "onStartCommand ---> Successfully connected")
         return START_STICKY
     }
@@ -124,32 +111,20 @@ class BLEConnectionService : Service() {
         Log.d("BLEConnectionService", "Connecting to ${device.address}...")
     }
 
-    private fun startForegroundService() {
-        val notificationManager = NotificationManagerCompat.from(this)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "BLE Connection Channel",
-                NotificationManager.IMPORTANCE_DEFAULT
-            )
-            notificationManager.createNotificationChannel(channel)
-        }
-
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("BLE Connection Service")
-            .setContentText("Handling BLE connection")
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .build()
-
-        startForeground(BLE_NOTIFICATION_ID, notification)
-
-        Log.d("BLEConnectionService", "startForeground(BLE_NOTIFICATION_ID, notification)")
-    }
-
     override fun onDestroy() {
         super.onDestroy()
         bluetoothGatt?.close()
         bluetoothGatt = null
     }
+
+    private fun Intent.getScanResults(): List<BluetoothScanResult> =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            getParcelableArrayListExtra(
+                BluetoothLeScanner.EXTRA_LIST_SCAN_RESULT,
+                BluetoothScanResult::class.java,
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            getParcelableArrayListExtra(BluetoothLeScanner.EXTRA_LIST_SCAN_RESULT)
+        } ?: emptyList()
 }

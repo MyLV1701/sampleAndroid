@@ -98,7 +98,7 @@ class BLEScanService : Service() {
 
             val scanFilters = listOf(
                 ScanFilter.Builder()
-                    .setDeviceName("Basic_BLE")  // Filter for devices with name "A"
+                    // .setDeviceName("Basic_BLE")  // Filter for devices with name "A"
                     .build()
             )
             if (::scanner.isInitialized && scanPendingIntent != null) {
@@ -144,29 +144,29 @@ class BLEScanReceiver : BroadcastReceiver() {
         val deviceName = result.scanRecord?.deviceName  // From scan record
             ?: device.name                             // Cached name
             ?: "Unknown Device"                        // Fallback
-
-            val msg = StringBuilder().apply {
-                append("Address: ${device.address}\n")
-                append("Name: $deviceName\n")
-                append("RSSI: ${result.rssi}\n")
-                append("Advertisement Data: ${result.scanRecord?.bytes?.contentToString()}\n")
-            }.toString()
-
-            Log.d("BLEScanReceiver", msg.trim())
-            
-            // // Start BLEConnectionService to handle the connection
-            // val scanServiceIntent = Intent(context, BLEScanService::class.java).apply {
-            //     putExtra(BLEScanService.STOP_SERVICE, device.address)
-            // }
-            // context.startService(scanServiceIntent)
-            
-            val serviceIntent = Intent(context, BLEConnectionService::class.java).apply {
-                putExtra(BLEConnectionService.DEVICE_ADDRESS, device.address)
-            }
-            // context.startForegroundService(serviceIntent)
-            //context.startService(serviceIntent)
-            if (counter < 1)
+            if (counter < 2)
             {
+                val msg = StringBuilder().apply {
+                    append("Address: ${device.address}\n")
+                    append("Name: $deviceName\n")
+                    append("RSSI: ${result.rssi}\n")
+                    append("Advertisement Data: ${result.scanRecord?.bytes?.contentToString()}\n")
+                }.toString()
+
+                Log.d("BLEScanReceiver", msg.trim())
+                
+                // // Start BLEConnectionService to handle the connection
+                // val scanServiceIntent = Intent(context, BLEScanService::class.java).apply {
+                //     putExtra(BLEScanService.STOP_SERVICE, device.address)
+                // }
+                // context.startService(scanServiceIntent)
+                
+                val serviceIntent = Intent(context, BLEConnectionService::class.java).apply {
+                    putExtra(BLEConnectionService.DEVICE_ADDRESS, device.address)
+                }
+                // context.startForegroundService(serviceIntent)
+                //context.startService(serviceIntent)
+
                 context.getApplicationContext().startForegroundService(serviceIntent)
                 counter++
                 Log.d("BLEScanReceiver", "context.getApplicationContext().startService(serviceIntent)")

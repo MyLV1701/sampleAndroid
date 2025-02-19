@@ -54,14 +54,15 @@ class BLEConnectionService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val deviceAddress = intent?.getStringExtra(DEVICE_ADDRESS)
-        if (deviceAddress != null) {
-            val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-            val device : BluetoothDevice = bluetoothAdapter.getRemoteDevice(deviceAddress)
-            connectToDevice(device)
-        } else {
-            stopSelf()
-        }
+        // val deviceAddress = intent?.getStringExtra(DEVICE_ADDRESS)
+        // if (deviceAddress != null) {
+        //     val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+        //     val device : BluetoothDevice = bluetoothAdapter.getRemoteDevice(deviceAddress)
+        //     connectToDevice(device)
+        // } else {
+        //     stopSelf()
+        // }
+        Log.d("BLEConnectionService", "onStartCommand ---> Successfully connected")
         return START_STICKY
     }
 

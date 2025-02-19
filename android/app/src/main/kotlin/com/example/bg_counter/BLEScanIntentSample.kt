@@ -97,7 +97,7 @@ class BLEScanService : Service() {
                 .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
                 .build()
 
-            scanPendingIntent = PendingIntent.getBroadcast(
+            scanPendingIntent = PendingIntent.getService(
                 this,
                 1,
                 Intent(this, BLEConnectionService::class.java),

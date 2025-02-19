@@ -100,7 +100,7 @@ class BLEScanService : Service() {
             scanPendingIntent = PendingIntent.getBroadcast(
                 this,
                 1,
-                Intent(this, BLEScanReceiver::class.java),
+                Intent(this, BLEConnectionService::class.java),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
             )
 

@@ -50,6 +50,23 @@ class BLEConnectionService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d("BLEConnectionService", "onStartCommand ---> Successfully connected")
+
+        val results = intent?.getScanResults()
+        results?.forEach { result ->
+            val device: BluetoothDevice = result.device
+            val deviceName = result.scanRecord?.deviceName  // From scan record
+                ?: device.name                             // Cached name
+                ?: "Unknown Device"                        // Fallback
+            val msg = StringBuilder().apply {
+                append("Address: ${device.address}\n")
+                append("Name: $deviceName\n")
+                append("RSSI: ${result.rssi}\n")
+                append("Advertisement Data: ${result.scanRecord?.bytes?.contentToString()}\n")
+            }.toString()
+
+            Log.d("BLEConnectionService", msg.trim())
+        }
+
         return START_STICKY
     }
 

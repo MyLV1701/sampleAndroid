@@ -82,7 +82,7 @@
 
         <service
             android:name="com.example.bg_counter.BLEConnectionService"
-            android:exported="false"
+            android:exported="true"
             android:foregroundServiceType="connectedDevice" />
 
         <receiver 

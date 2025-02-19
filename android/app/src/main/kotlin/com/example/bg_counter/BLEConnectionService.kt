@@ -65,6 +65,8 @@ class BLEConnectionService : Service() {
             }.toString()
 
             Log.d("BLEConnectionService", msg.trim())
+
+            connectToDevice(device)
         }
 
         return START_STICKY

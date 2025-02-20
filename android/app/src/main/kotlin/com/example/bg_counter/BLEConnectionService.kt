@@ -49,24 +49,38 @@ class BLEConnectionService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d("BLEConnectionService", "onStartCommand ---> Successfully connected")
+        
 
-        val results = intent?.getScanResults()
-        results?.forEach { result ->
-            val device: BluetoothDevice = result.device
-            val deviceName = result.scanRecord?.deviceName  // From scan record
-                ?: device.name                             // Cached name
-                ?: "Unknown Device"                        // Fallback
-            val msg = StringBuilder().apply {
-                append("Address: ${device.address}\n")
-                append("Name: $deviceName\n")
-                append("RSSI: ${result.rssi}\n")
-                append("Advertisement Data: ${result.scanRecord?.bytes?.contentToString()}\n")
-            }.toString()
+        if (intent == null) 
+        {
+            Log.d("BLEConnectionService", "onStartCommand ---> intent == NULL")
+        }
+        else 
+        {
+            val results = intent.getScanResults()
+            if (results.isEmpty())
+            {
+                Log.d("BLEConnectionService", "onStartCommand ---> results.isEmpty()")
+            }
+            else 
+            {
+                results.forEach { result ->
+                    val device: BluetoothDevice = result.device
+                    val deviceName = result.scanRecord?.deviceName  // From scan record
+                        ?: device.name                             // Cached name
+                        ?: "Unknown Device"                        // Fallback
+                    val msg = StringBuilder().apply {
+                        append("Address: ${device.address}\n")
+                        append("Name: $deviceName\n")
+                        append("RSSI: ${result.rssi}\n")
+                        append("Advertisement Data: ${result.scanRecord?.bytes?.contentToString()}\n")
+                    }.toString()
 
-            Log.d("BLEConnectionService", msg.trim())
+                    Log.d("BLEConnectionService", msg.trim())
 
-            connectToDevice(device)
+                    connectToDevice(device)
+                }
+            }
         }
 
         return START_STICKY
@@ -79,19 +93,19 @@ class BLEConnectionService : Service() {
                     when (newState) {
                         BluetoothProfile.STATE_CONNECTED -> {
                             Log.d("BLEConnectionService", "Successfully connected to ${gatt.device.address}")
-                            connectionAttempts = 0  // Reset counter on successful connection
-                            gatt.discoverServices()
+                            // connectionAttempts = 0  // Reset counter on successful connection
+                            // gatt.discoverServices()
                         }
                         BluetoothProfile.STATE_DISCONNECTED -> {
                             Log.d("BLEConnectionService", "Disconnected from ${gatt.device.address}")
-                            bluetoothGatt?.close()
-                            bluetoothGatt = null
-                            // Retry connection if not max attempts
-                            if (connectionAttempts < MAX_ATTEMPTS) {
-                                connectToDevice(gatt.device)
-                            } else {
-                                stopSelf()
-                            }
+                            // bluetoothGatt?.close()
+                            // bluetoothGatt = null
+                            // // Retry connection if not max attempts
+                            // if (connectionAttempts < MAX_ATTEMPTS) {
+                            //     connectToDevice(gatt.device)
+                            // } else {
+                            //     stopSelf()
+                            // }
                         }
                     }
                 }
@@ -112,19 +126,24 @@ class BLEConnectionService : Service() {
 
     private fun connectToDevice(device: BluetoothDevice) {
 
-        val scanService = Intent(this, BLEScanService::class.java)
-        stopService(scanService)
+        // val scanService = Intent(this, BLEScanService::class.java)
+        // stopService(scanService)
         
         bluetoothGatt?.close()
         bluetoothGatt = null
 
         connectionAttempts++
 
-        Handler(Looper.getMainLooper()).postDelayed({
-            bluetoothGatt = device.connectGatt(this, false, gattCallback, BluetoothDevice.TRANSPORT_LE)
-            bluetoothGatt?.refresh()
-        }, 2000)  // Add a delay before reconnecting
+        if (connectionAttempts < 2)
+        {
 
+            // bluetoothGatt = device.connectGatt(this, false, gattCallback, BluetoothDevice.TRANSPORT_LE)
+
+            Handler(Looper.getMainLooper()).postDelayed({
+                bluetoothGatt = device.connectGatt(this, false, gattCallback, BluetoothDevice.TRANSPORT_LE)
+                bluetoothGatt?.refresh()
+            }, 2000)  // Add a delay before reconnecting
+        }
         // bluetoothGatt = device.connectGatt(this, false, gattCallback)
 
         Log.d("BLEConnectionService", "Connecting to ${device.address}...")

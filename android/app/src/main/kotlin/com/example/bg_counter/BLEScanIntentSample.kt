@@ -106,7 +106,7 @@ class BLEScanService : Service() {
 
             val scanFilters = listOf(
                 ScanFilter.Builder()
-                    .setDeviceName("Basic_BLE")  // Filter for devices with name "A"
+                    .setDeviceName("Basic_BLE_TEST")  // Filter for devices with name "A"
                     .build()
             )
             if (::scanner.isInitialized && scanPendingIntent != null) {

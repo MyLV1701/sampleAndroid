@@ -1,6 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.bg_counter">
 
+    <!-- Add this line for Companion Device Manager -->
+    <uses-feature android:name="android.software.companion_device_setup" android:required="true" />
+
     <!-- Bluetooth Low Energy（BLE）をサポートするデバイスであることを指定 -->
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
 
@@ -44,7 +47,10 @@
 
     <!-- アプリがデバイスの起動完了後にブロードキャストを受信することを許可します。この権限を持つアプリは、デバイスが再起動されたときに BOOT_COMPLETED ブロードキャストを受信し、特定の初期化処理を実行することができます。-->
     <uses-permission android:name="android.permission.VIBRATE"/>
-    <!--    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>-->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
+    <uses-permission android:name="android.permission.REQUEST_COMPANION_RUN_IN_BACKGROUND" />
+    <uses-permission android:name="android.permission.REQUEST_COMPANION_START_FOREGROUND_SERVICES_FROM_BACKGROUND" />
 
     <application
         android:label="bg_counter"
@@ -85,6 +91,12 @@
             android:exported="true"
             android:foregroundServiceType="connectedDevice" />
 
+        <service
+            android:name="com.example.bg_counter.BLEScanwithCDM"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice"
+            android:enabled="true" />
+
         <receiver 
              android:name="com.example.bg_counter.NotificationReceiver"
              android:exported="false">
@@ -94,10 +106,11 @@
         </receiver>
 
         <receiver 
-             android:name="com.example.bg_counter.BLEScanReceiver"
-             android:exported="false">
+            android:name="com.example.bg_counter.BLEScanwithCMDReceiver"
+            android:exported="true"
+            android:enabled="true">
             <intent-filter>
-                <action android:name="com.example.bg_counter.BLE_SCAN_RESULT" />
+                <action android:name="android.bluetooth.device.action.ACL_DISCONNECTED" />
             </intent-filter>
         </receiver>
 
@@ -108,8 +121,6 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
-
-
 
         <meta-data
             android:name="flutterEmbedding"
